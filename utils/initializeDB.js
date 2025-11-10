@@ -90,10 +90,13 @@ export const initializeDatabase = async () => {
         user_id INTEGER REFERENCES users(id),
         type VARCHAR(50) NOT NULL,
         data JSONB NOT NULL,
+        status VARCHAR(20) DEFAULT 'completed',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'completed'`);
 
     // Create indexes
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);

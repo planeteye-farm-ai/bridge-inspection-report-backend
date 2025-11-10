@@ -20,13 +20,14 @@ const saveInspection = async (req, res, type) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    const data = req.body;
+    const payload = req.body?.data ?? req.body;
+    const status = req.body?.status ?? 'completed';
 
     const result = await pool.query(
-      `INSERT INTO inspections (user_id, type, data) 
-       VALUES ($1, $2, $3) 
-       RETURNING id, created_at, updated_at`,
-      [userId, type, JSON.stringify(data)]
+      `INSERT INTO inspections (user_id, type, data, status) 
+       VALUES ($1, $2, $3, $4) 
+       RETURNING id, created_at, updated_at, status`,
+      [userId, type, JSON.stringify(payload), status]
     );
 
     console.log(`💾 ${type.toUpperCase()} inspection saved: ID ${result.rows[0].id}`);
@@ -36,6 +37,7 @@ const saveInspection = async (req, res, type) => {
       id: result.rows[0].id,
       createdAt: result.rows[0].created_at,
       updatedAt: result.rows[0].updated_at,
+      status: result.rows[0].status ?? 'completed',
       message: `${type.toUpperCase()} inspection saved successfully`
     });
   } catch (err) {
@@ -64,7 +66,7 @@ router.get('/api/inspections', async (req, res) => {
     }
 
     const params = [userId];
-    let query = 'SELECT id, type, data, created_at, updated_at FROM inspections WHERE user_id = $1';
+    let query = 'SELECT id, type, data, status, created_at, updated_at FROM inspections WHERE user_id = $1';
     if (type === 'lidar' || type === 'sar') {
       query += ' AND type = $2';
       params.push(type);
@@ -80,6 +82,7 @@ router.get('/api/inspections', async (req, res) => {
         reportType: row.type.toUpperCase(),
         createdAt: row.created_at,
         updatedAt: row.updated_at,
+        status: row.status ?? 'completed',
         data: row.data
       }))
     });
@@ -101,14 +104,20 @@ router.put('/api/inspections/:id', async (req, res) => {
     }
 
     const inspectionId = parseInt(req.params.id, 10);
-    const { type, data } = req.body;
+    const { type, data, status } = req.body;
 
     const result = await pool.query(
       `UPDATE inspections 
-       SET type = $1, data = $2, updated_at = NOW() 
-       WHERE id = $3 AND user_id = $4 
+       SET type = $1, data = $2, status = $3, updated_at = NOW() 
+       WHERE id = $4 AND user_id = $5 
        RETURNING id, created_at, updated_at`,
-      [type, JSON.stringify(data), inspectionId, userId]
+      [
+        type ?? 'sar',
+        JSON.stringify(data),
+        status ?? 'completed',
+        inspectionId,
+        userId,
+      ]
     );
 
     if (result.rowCount === 0) {
@@ -120,6 +129,7 @@ router.put('/api/inspections/:id', async (req, res) => {
       id: result.rows[0].id,
       createdAt: result.rows[0].created_at,
       updatedAt: result.rows[0].updated_at,
+      status: status ?? 'completed',
       message: 'Inspection updated successfully'
     });
   } catch (err) {
