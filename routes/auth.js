@@ -94,7 +94,26 @@ router.post('/api/auth/login', async (req, res) => {
 
     const userRow = result.rows[0];
 
-    const passwordMatch = await bcrypt.compare(password, userRow.password);
+    let passwordMatch = false;
+    const storedPassword = userRow.password || '';
+
+    if (storedPassword.startsWith('$2a$') || storedPassword.startsWith('$2b$') || storedPassword.startsWith('$2y$')) {
+      // Hashed password
+      passwordMatch = await bcrypt.compare(password, storedPassword);
+    } else {
+      // Legacy plain-text password
+      passwordMatch = storedPassword === password;
+      if (passwordMatch) {
+        // Migrate to hashed password transparently
+        const newHash = await bcrypt.hash(password, 10);
+        await pool.query(
+          'UPDATE users SET password = $1 WHERE id = $2',
+          [newHash, userRow.id]
+        );
+        console.log(`[AUTH] Migrated legacy password for ${normalizedEmail}`);
+      }
+    }
+
     if (!passwordMatch) {
       console.log(`❌ Login failed (invalid password): ${normalizedEmail}`);
       return res.status(401).json({
