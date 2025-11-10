@@ -1,5 +1,6 @@
 import express from 'express';
 import pool from '../config/database.js';
+import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
@@ -30,9 +31,11 @@ router.post('/api/auth/signup', async (req, res) => {
     }
 
     // Create new user
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const result = await pool.query(
       'INSERT INTO users (email, password, name) VALUES ($1, $2, $3) RETURNING id, email, name',
-      [normalizedEmail, password, name]
+      [normalizedEmail, hashedPassword, name]
     );
 
     const user = result.rows[0];
@@ -77,8 +80,8 @@ router.post('/api/auth/login', async (req, res) => {
     const normalizedEmail = email.toLowerCase().trim();
 
     const result = await pool.query(
-      'SELECT id, email, name FROM users WHERE email = $1 AND password = $2',
-      [normalizedEmail, password]
+      'SELECT id, email, name, password FROM users WHERE email = $1',
+      [normalizedEmail]
     );
 
     if (result.rows.length === 0) {
@@ -89,7 +92,22 @@ router.post('/api/auth/login', async (req, res) => {
       });
     }
 
-    const user = result.rows[0];
+    const userRow = result.rows[0];
+
+    const passwordMatch = await bcrypt.compare(password, userRow.password);
+    if (!passwordMatch) {
+      console.log(`❌ Login failed (invalid password): ${normalizedEmail}`);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid email or password'
+      });
+    }
+
+    const user = {
+      id: userRow.id,
+      email: userRow.email,
+      name: userRow.name
+    };
     console.log(`✅ Login successful: ${user.email} (ID: ${user.id})`);
 
     res.json({

@@ -83,6 +83,18 @@ export const initializeDatabase = async () => {
       )
     `);
 
+    // Unified inspections table for JSON storage
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS inspections (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        type VARCHAR(50) NOT NULL,
+        data JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Create indexes
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_lidar_user_id ON lidar_inspections(user_id)`);
