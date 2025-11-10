@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 // Import configurations
@@ -38,29 +39,46 @@ app.use(healthRoutes);
 app.use(authRoutes);
 app.use(inspectionRoutes);
 
-// Serve frontend (production build)
-const distPath = path.join(__dirname, '..', 'dist');
-app.use(express.static(distPath));
+// Serve frontend (production build) if available
+const distCandidates = [
+  process.env.FRONTEND_DIST && path.resolve(process.env.FRONTEND_DIST),
+  path.join(__dirname, '..', 'project', 'dist'),
+  path.join(__dirname, '..', 'dist'),
+].filter(Boolean);
 
-// Catch-all handler: serve index.html for non-API routes
-// Compatible with Express 5.x - use middleware instead of wildcard route
-app.use((req, res, next) => {
-  // Skip API routes
-  if (req.path.startsWith('/api')) {
-    return next();
-  }
-  // Skip static file requests (already handled by express.static)
-  if (req.path.includes('.')) {
-    return next();
-  }
-  // Serve index.html for all other routes (SPA routing)
-  res.sendFile(path.join(distPath, 'index.html'), (err) => {
-    if (err) {
-      console.error('Error sending index.html:', err);
-      res.status(404).json({ success: false, error: 'Page not found' });
+const distPath = distCandidates.find((candidate) => fs.existsSync(candidate));
+
+if (distPath) {
+  console.log(`🗂  Serving frontend from: ${distPath}`);
+  app.use(express.static(distPath));
+
+  // Catch-all handler: serve index.html for non-API routes (SPA routing)
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
     }
+    if (req.path.includes('.')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'), (err) => {
+      if (err) {
+        console.error('Error sending index.html:', err);
+        res.status(404).json({
+          success: false,
+          error: 'Frontend build not found. Run npm run build in the frontend project.',
+        });
+      }
+    });
   });
-});
+} else {
+  console.warn('⚠️  No frontend build found. Set FRONTEND_DIST or run npm run build in the frontend project.');
+  app.get('/', (req, res) => {
+    res.status(200).json({
+      success: false,
+      message: 'Frontend build not found. For UI, run npm run build in the frontend project and set FRONTEND_DIST if needed.',
+    });
+  });
+}
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

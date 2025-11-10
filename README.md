@@ -55,7 +55,7 @@ The server will:
 
 ### Environment Variables
 
-Create a `.env` file in the project root:
+Create a `.env` file in the backend folder:
 
 ```env
 PORT=4001
@@ -63,6 +63,8 @@ DATABASE_URL=postgresql://user:pass@host:5432/dbname
 JWT_SECRET=your-secret-key
 CORS_ORIGIN=http://localhost:5173,http://localhost:5174
 NODE_ENV=development
+# Optional: absolute or relative path to the frontend build directory
+# FRONTEND_DIST=../project/dist
 ```
 
 ## 🔧 Adding New Features
@@ -111,5 +113,5 @@ app.use(exampleMiddleware);
 - Database connection is managed in `config/database.js`
 - CORS is configured in `config/cors.js`
 - Error handling is centralized in `middleware/errorHandler.js`
-- Frontend is served from `../dist/` folder
+- Frontend build is served automatically if `dist/index.html` is found (see `FRONTEND_DIST`)
 

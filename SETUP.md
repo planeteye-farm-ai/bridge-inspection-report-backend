@@ -40,7 +40,7 @@ The server will start on port 4001 (or PORT from .env).
 
 ## ✅ Verify
 
-Open in browser: http://localhost:4001/api/health
+Open in browser: http://https://bridge-inspection-report-backend.onrender.com/api/health
 
 Should return JSON with `"status": "OK"`
 
