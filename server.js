@@ -83,6 +83,18 @@ if (distPath) {
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
+// Global error handlers for unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't exit the process in production - let it continue serving
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  // In production, you might want to exit gracefully
+  // For now, log and continue
+});
+
 // Start server
 app.listen(port, '0.0.0.0', async () => {
   console.log(`🚀 Bridge Inspection Server running on port ${port}`);
@@ -91,7 +103,14 @@ app.listen(port, '0.0.0.0', async () => {
   console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
   
   // Initialize database tables on startup
-  await initializeDatabase();
+  try {
+    await initializeDatabase();
+    console.log('✅ Database initialized successfully');
+  } catch (err) {
+    console.error('❌ Database initialization failed:', err);
+    // Don't exit - server can still run and handle requests
+    // Database might reconnect later
+  }
 });
 
 // Graceful shutdown

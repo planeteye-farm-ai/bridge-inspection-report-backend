@@ -14,13 +14,16 @@ const pool = new Pool({
 });
 
 // Test database connection
-pool.on('connect', () => {
+pool.on('connect', (client) => {
   console.log('✅ Connected to PostgreSQL database');
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Unexpected error on idle client', err);
-  process.exit(-1);
+  console.error('❌ Unexpected error on idle database client', err);
+  console.error('❌ Error code:', err.code);
+  console.error('❌ Error message:', err.message);
+  // Don't exit the process - let it try to reconnect
+  // The connection pool will handle reconnection
 });
 
 export default pool;
