@@ -7,7 +7,13 @@ dotenv.config();
 // PostgreSQL connection pool configuration
 const poolConfig = {
   connectionString: process.env.DATABASE_URL || 
+<<<<<<< HEAD
     'postgresql://bridge_inspection_db1_user:Ao9eH05oQb0fPyxS4rw8qJXVP6s8yjtQ@dpg-d4nacde3jp1c73ai3ee0-a.oregon-postgres.render.com/bridge_inspection_db1',
+=======
+    // 'postgresql://bridge_inspection_db_vo5e_user:r163EbcZhjnLZPFHWxRmINnEG3ECVlKl@dpg-d42a0neuk2gs73bds170-a.oregon-postgres.render.com/bridge_inspection_db_vo5e',
+        'postgresql://bridge_inspection_db1_user:Ao9eH05oQb0fPyxS4rw8qJXVP6s8yjtQ@dpg-d4nacde3jp1c73ai3ee0-a.oregon-postgres.render.com/bridge_inspection_db1',
+
+>>>>>>> 1df59bc8343d3db18cd3cb809af6d3530badf18a
   ssl: {
     rejectUnauthorized: false // For Render PostgreSQL
   },
